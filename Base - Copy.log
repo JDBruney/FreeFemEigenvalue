@@ -1,0 +1,74 @@
+-- FreeFem++ v4.9 (Tue, Apr 20, 2021 12:10:29 AM - git v4.9)
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : // Parameters
+    2 : verbosity=0;
+    3 : real sigma = 20; //value of the shift
+    4 : int nev = 20; //number of computed eigen value close to sigma
+    5 :
+    6 : // Mesh
+    7 : mesh Th = square(20, 20, [pi*x, pi*y]);
+    8 :
+    9 : // Fespace
+   10 : fespace Vh(Th, P2);
+   11 : Vh u1, u2;
+   12 :
+   13 : // Problem
+   14 : // OP = A - sigma B ; // the shifted matrix
+   15 : varf op (u1, u2)
+   16 :     = int2d(Th)(
+   17 :            dx(u1)*dx(u2)
+   18 :          + dy(u1)*dy(u2)
+   19 :          - sigma* u1*u2
+   20 :     )
+   21 :      + on(1, 2, 3, 4, u1=0)
+   22 :      ;
+   23 :
+   24 : varf b ([u1], [u2]) = int2d(Th)(u1*u2); //no boundary condition
+   25 :
+   26 :  matrix OP = op(Vh, Vh, solver=Crout, factorize=1); //crout solver because the matrix in not positive
+   27 :  matrix B = b(Vh, Vh, solver=CG, eps=1e-20);
+   28 :
+   29 : // important remark:
+   30 : // the boundary condition is make with exact penalization:
+   31 : // we put 1e30=tgv on the diagonal term of the lock degree of freedom.
+   32 : // So take Dirichlet boundary condition just on $a$ variational form
+   33 : // and not on $b$ variational form.
+   34 : // because we solve $ w=OP^-1*B*v $
+   35 :
+   36 : // Solve
+   37 : real[int] ev(nev); //to store the nev eigenvalue
+   38 : Vh[int] eV(nev); //to store the nev eigenvector
+   39 :
+   40 : int k = EigenValue(OP, B, sym=true, sigma=sigma, value=ev, vector=eV,
+   41 : tol=1e-10, maxit=0, ncv=0);
+   42 :
+   43 : // Display & Plot
+   44 : for (int i = 0; i < k; i++){
+   45 :     u1 = eV[i];
+   46 :     real gg = int2d(Th)(dx(u1)*dx(u1) + dy(u1)*dy(u1));
+   47 :     real mm = int2d(Th)(u1*u1) ;
+   48 :     cout << "lambda[" << i << "] = " << ev[i] << ", err= " << int2d(Th)(dx(u1)*dx(u1) + dy(u1)*dy(u1) - (ev[i])*Ðæu1*u1) << endl;
+   49 :  plot(eV[i], cmm="Eigen Vector "+i+" value ="+ev[i], wait=true, value=true);
+   50 :  } sizestack + 1024 =2000  ( 976 )
+ 
+lambda[0] = 5.0002, err= -3.66892e-12
+lambda[1] = 8.00074, err= -6.11339e-11
+lambda[2] = 10.0011, err= -1.2777e-12
+lambda[3] = 10.0011, err= 1.03e-11
+lambda[4] = 13.002, err= -7.45094e-11
+lambda[5] = 13.0039, err= 3.59291e-12
+lambda[6] = 17.0046, err= -4.57399e-12
+lambda[7] = 17.0048, err= 4.16049e-11
+lambda[8] = 18.0083, err= -2.02154e-11
+lambda[9] = 20.0096, err= -5.96548e-13
+lambda[10] = 20.0096, err= -4.74319e-14
+lambda[11] = 25.014, err= -2.82879e-10
+lambda[12] = 25.0283, err= 2.64196e-10
+lambda[13] = 26.0159, err= 1.42178e-11
+lambda[14] = 26.0159, err= -3.46898e-12
+lambda[15] = 29.0258, err= -2.56735e-11
+lambda[16] = 29.0273, err= 4.86375e-11
+lambda[17] = 32.0449, err= 5.76047e-11
+lambda[18] = 34.049, err= 2.17786e-11
+lambda[19] = 34.0492, err= 6.88669e-11
+ try getConsole C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\Base - Copy.edp
