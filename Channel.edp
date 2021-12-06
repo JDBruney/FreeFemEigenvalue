@@ -1,13 +1,33 @@
+//See https://doc.freefem.org/models/eigen-value-problems.html
+
 // Parameters
 verbosity=0;
-real sigma = 20; //value of the shift
-int nev = 20; //number of computed eigen value close to sigma
+real sigma = 0; //value of the shift
+int nev = 10; //number of computed eigen value close to sigma
+real a = 0.2;   //amplitude of oscillation
+int Wall = 1;
+int Per1 = 2;
+int Per2 = 3;
+int Const= 4;
+real length=1;
+int Res = 40;   //Resolution of Solver
+ 
+// Define mesh boundaries
+border Gamma1(t=length, 0){x=t; y=1-a*cos(2*pi*t);label=Wall;}
+border Gamma2(t=1-a, 0){x=0; y=t;label=Per1;}
+border Gamma3(t=0, length){x=t; y=0;label=Wall;}
+border Gamma4(t=0, 1-a){x=length; y=t;label=Per2;}
  
 // Mesh
-mesh Th = square(20, 20, [pi*x, pi*y]);
+mesh Th = buildmesh(Gamma1(floor(Res*length))+Gamma2(Res)+Gamma3(floor(Res*length))+Gamma4(Res));
+ 
+ 
+// Plot the Mesh
+plot(Th, wait=true);
+
  
 // Fespace
-fespace Vh(Th, P2);
+fespace Vh(Th, P1, periodic=[[Per1, y],[Per2, y]]);
 Vh u1, u2;
  
 // Problem
@@ -16,10 +36,10 @@ varf op (u1, u2)
     = int2d(Th)(
            dx(u1)*dx(u2)
          + dy(u1)*dy(u2)
-         - sigma* u1*u2
-    )
-     + on(1, 2, 3, 4, u1=0)
-     ;
+         + sigma* u1*u2
+    );
+// Boundary Conditions    + on(1, 2, 3, 4, u1=0)
+
  
 varf b ([u1], [u2]) = int2d(Th)(u1*u2); //no boundary condition
  
