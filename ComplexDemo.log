@@ -1,0 +1,111 @@
+-- FreeFem++ v4.9 (Tue, Apr 20, 2021 12:10:29 AM - git v4.9)
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue 
+    1 : //  laplace with matrix
+    2 : verbosity=1;
+    3 : mesh Th=square(20,20,[pi*x,pi*y]);
+    4 : fespace Vh(Th,P2);
+    5 : Vh<complex> u1,u2;
+    6 : Vh ur,ui;
+    7 : int n=u1.n;
+    8 : complex[int] Bu1(n),Bu2(n);
+    9 : complex[int] Au1(n),Au2(n);
+   10 :
+   11 : complex  sigma = 0; //  1.000+1i;
+   12 : complex nu=1+1i;
+   13 :
+   14 : varf  op(u1,u2)= int2d(Th)(  nu*(dx(u1)*dx(u2) + dy(u1)*dy(u2))  - sigma*u1*u2  )
+   15 :  +  on(1,2,3,4,u1=0)
+   16 : ;
+   17 : varf  a(u1,u2)= int2d(Th)(  nu*(dx(u1)*dx(u2) + dy(u1)*dy(u2))   )
+   18 :                    +  on(1,2,3,4,u1=0);
+   19 :
+   20 : varf b([u1],[u2]) = int2d(Th)(  u1*u2 ); // +  on(1,2,3,4,u1=0);
+   21 :
+   22 :
+   23 : matrix<complex> OP= op(Vh,Vh,solver=UMFPACK);
+   24 : matrix<complex> A= a(Vh,Vh,solver=GMRES);
+   25 : matrix<complex> B= b(Vh,Vh,solver=GMRES,eps=1e-20);
+   26 : int nev=10;
+   27 :
+   28 :  complex[int] ev(nev); // to store 10 eigen value
+   29 :  Vh<complex>[int] eV(nev);   // to store 10 eigen vector
+   30 :
+   31 :  int k=EigenValue(OP,B,sigma=sigma,value=ev,vector=eV,
+   32 :                  tol=1e-10,maxit=90000,ncv=100);
+   33 :
+   34 :  k=min(k,nev); //  some time the number of converged eigen value
+   35 :                // can be greater than nev;
+   36 :  for (int kk=0;kk<k;kk++)
+   37 :  {
+   38 :    int i=kk;
+   39 :    u1=eV[i];
+   40 :    complex v= ev[i];
+   41 :    Bu1=B*u1[];
+   42 :    Au1=A*u1[];
+   43 :      //  The Rayleigh quotient lambda = x'Ax/x'Bx
+   44 :      //  given the eigen value
+   45 :    complex xAx = u1[]'*Au1 ;
+   46 :    complex xBx = u1[]'*Bu1 ;
+   47 :    //  A u = l * B u
+   48 :    Bu1 =   v*Bu1;
+   49 :    u1[] = Au1 -Bu1;
+   50 :    if(norm(u1[].sum)>1e-5)
+   51 :          cout << "BUG :::   zero ==  " <<u1[].sum << endl;
+   52 :    cout << " ---- " <<  i<< " " <<  v << endl;
+   53 :    ur=real(eV[i]);
+   54 :    ui=imag(eV[i]);
+   55 :  //  plot(ur,cmm="Eigen  Vector (real)  "+i+" valeur =" + v  ,wait=1,value=1);
+   56 :  //  plot(ui,cmm="Eigen  Vector (imag)  "+i+" valeur =" + v  ,wait=1,value=1);
+   57 :
+   58 :      // FFCS: add 3d view
+   59 :     plot(eV[i],dim=3,fill=1);
+   60 : } sizestack + 1024 =2488  ( 1464 )
+ 
+  -- Square mesh : nb vertices  =441 ,  nb triangles = 800 ,  nb boundary edges 80
+Complex eigenvalue problem: A*x - B*x*lambda
+Complex eigenvalue problem: A*x - B*x*lambda
+driver = 4 - sigma= (0,0)
+ 
+Dimension of the system            : 1681
+Number of 'requested' eigenvalues  : 10
+Number of 'converged' eigenvalues  : 10
+Number of Arnoldi vectors generated: 100
+Number of iterations taken         : 1
+ 
+Eigenvalues:
+  lambda[1]: (2.00001,2.00001)
+  lambda[2]: (5.0002,5.0002)
+  lambda[3]: (5.00011,5.00011)
+  lambda[4]: (8.00074,8.00074)
+  lambda[5]: (10.0011,10.0011)
+  lambda[6]: (10.0011,10.0011)
+  lambda[7]: (13.0039,13.0039)
+  lambda[8]: (13.002,13.002)
+  lambda[9]: (17.0046,17.0046)
+  lambda[10]: (17.0048,17.0048)
+ 
+ ---- 0 (2.00001,2.00001)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 1 (5.0002,5.0002)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 2 (5.00011,5.00011)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 3 (8.00074,8.00074)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 4 (10.0011,10.0011)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 5 (10.0011,10.0011)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 6 (13.0039,13.0039)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 7 (13.002,13.002)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 8 (17.0046,17.0046)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 9 (17.0048,17.0048)
+  Plot::  Sorry no ps version for this type of plot 11
+times: compile 0.132s, execution 1.112s,  mpirank:0
+ ######## We forget of deleting   154 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+ CodeAlloc : nb ptr  3836,  size :496272 mpirank: 0
+Ok: Normal End
+ try getConsole C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\ComplexDemo.edp

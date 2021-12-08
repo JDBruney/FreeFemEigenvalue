@@ -1,0 +1,108 @@
+-- FreeFem++ v4.9 (Tue, Apr 20, 2021 12:10:29 AM - git v4.9)
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : //  laplace with matrix
+    2 : verbosity=1;
+    3 :
+    4 : int nev = 5; //number of computed eigen value close to sigma
+    5 : real amp = 0.0;   //amplitude of oscillation
+    6 : int Wall = 1;
+    7 : int Per1 = 2;
+    8 : int Per2 = 3;
+    9 : int Const= 4;
+   10 : real length=1;
+   11 : int Res = 100;   //Resolution of Solver
+   12 :
+   13 : // Define mesh boundaries
+   14 : border Gamma1(t=length, 0){x=t; y=1-amp*cos(2*pi*t);label=Wall;}
+   15 : border Gamma2(t=1-amp, 0){x=0; y=t;label=Per1;}
+   16 : border Gamma3(t=0, length){x=t; y=0;label=Wall;}
+   17 : border Gamma4(t=0, 1-amp){x=length; y=t;label=Per2;}
+   18 :
+   19 : // Mesh
+   20 : mesh Th = buildmesh(Gamma1(floor(Res*length))+Gamma2(Res)+Gamma3(floor(Res*length))+Gamma4(Res));
+   21 :
+   22 : // Fespace
+   23 : fespace Vh(Th,P2);
+   24 : Vh<complex> u1,u2;
+   25 : Vh ur,ui;
+   26 : int n=u1.n;
+   27 : complex[int] Bu1(n),Bu2(n);
+   28 : complex[int] Au1(n),Au2(n);
+   29 :
+   30 : complex  sigma = 0; //  1.000+1i;
+   31 :
+   32 : // Problem
+   33 : // OP = A - sigma B ; // the shifted matrix
+   34 : varf  op(u1,u2)= int2d(Th)( dx(u1)*dx(u2) + dy(u1)*dy(u2)  + sigma*u1*u2  );
+   35 : varf  a(u1,u2)= int2d(Th)(  dx(u1)*dx(u2) + dy(u1)*dy(u2)   );
+   36 : varf b([u1],[u2]) = int2d(Th)(  u1*u2 );
+   37 :
+   38 :
+   39 : matrix<complex> OP= op(Vh,Vh,solver=UMFPACK);
+   40 : matrix<complex> A= a(Vh,Vh,solver=GMRES);
+   41 : matrix<complex> B= b(Vh,Vh,solver=GMRES,eps=1e-20);
+   42 :
+   43 :  complex[int] ev(nev); // to store 10 eigen value
+   44 :  Vh<complex>[int] eV(nev);   // to store 10 eigen vector
+   45 :
+   46 :  int k=EigenValue(OP,B,sigma=sigma,value=ev,vector=eV,
+   47 :                  tol=1e-10,maxit=90000,ncv=100);
+   48 :
+   49 :  k=min(k,nev); //  some time the number of converged eigen value
+   50 :                // can be greater than nev;
+   51 :  for (int kk=0;kk<k;kk++)
+   52 :  {
+   53 :    int i=kk;
+   54 :    u1=eV[i];
+   55 :    complex v= ev[i];
+   56 :    Bu1=B*u1[];
+   57 :    Au1=A*u1[];
+   58 :      //  The Rayleigh quotient lambda = x'Ax/x'Bx
+   59 :      //  given the eigen value
+   60 :    complex xAx = u1[]'*Au1 ;
+   61 :    complex xBx = u1[]'*Bu1 ;
+   62 :    //  A u = l * B u
+   63 :    Bu1 =   v*Bu1;
+   64 :    u1[] = Au1 -Bu1;
+   65 :    if(norm(u1[].sum)>1e-5)
+   66 :          cout << "BUG :::   zero ==  " <<u1[].sum << endl;
+   67 :    cout << " ---- " <<  i<< " " <<  v << endl;
+   68 :    ur=real(eV[i]);
+   69 :    ui=imag(eV[i]);
+   70 :  //  plot(ur,cmm="Eigen  Vector (real)  "+i+" valeur =" + v  ,wait=1,value=1);
+   71 :  //  plot(ui,cmm="Eigen  Vector (imag)  "+i+" valeur =" + v  ,wait=1,value=1);
+   72 :
+   73 :      // FFCS: add 3d view
+   74 :     plot(eV[i],dim=3,fill=1);
+   75 : } sizestack + 1024 =2432  ( 1408 )
+ 
+  --  mesh:  Nb of Triangles =  23822, Nb of Vertices 12112
+Complex eigenvalue problem: A*x - B*x*lambda
+Complex eigenvalue problem: A*x - B*x*lambda
+driver = 4 - sigma= (0,0)
+ 
+Dimension of the system            : 48045
+Number of 'requested' eigenvalues  : 5
+Number of 'converged' eigenvalues  : 5
+Number of Arnoldi vectors generated: 100
+Number of iterations taken         : 1
+ 
+Eigenvalues:
+  lambda[1]: (4.82698e-14,4.73129e-15)
+  lambda[2]: (9.8696,-3.01029e-15)
+  lambda[3]: (9.8696,3.43185e-15)
+  lambda[4]: (19.7392,-8.39716e-15)
+  lambda[5]: (39.4784,1.40338e-14)
+ 
+ ---- 0 (4.82698e-14,4.73129e-15)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 1 (9.8696,-3.01029e-15)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 2 (9.8696,3.43185e-15)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 3 (19.7392,-8.39716e-15)
+  Plot::  Sorry no ps version for this type of plot 11
+ ---- 4 (39.4784,1.40338e-14)
+  Plot::  Sorry no ps version for this type of plot 11
+times: compile 0.141s, execution 8.035s,  mpirank:0
+^ try getConsole C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\ComplexDemo2.edp

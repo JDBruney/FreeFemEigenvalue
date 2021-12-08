@@ -4,7 +4,7 @@
     2 :
     3 : // Parameters
     4 : verbosity=0;
-    5 : real sigma = 0; //value of the shift
+    5 : complex sigma = 0; //value of the shift
     6 : int nev = 5; //number of computed eigen value close to sigma
     7 : real a = 0.2;   //amplitude of oscillation
     8 : int Wall = 1;
@@ -30,7 +30,7 @@
    28 :
    29 : // Fespace
    30 : fespace Vh(Th, P1, periodic=[[Per1, y],[Per2, y]]);
-   31 : Vh u1, u2;
+   31 : Vh<complex> u1, u2;
    32 :
    33 : // Problem
    34 : // OP = A - sigma B ; // the shifted matrix
@@ -45,7 +45,7 @@
    43 :
    44 : varf b ([u1], [u2]) = int2d(Th)(u1*u2); //no boundary condition
    45 :
-   46 :  matrix OP = op(Vh, Vh, solver=Crout, factorize=1); //crout solver because the matrix in not positive
+   46 :  matrix<complex> OP = op(Vh, Vh, solver=Crout, factorize=1); //crout solver because the matrix in not positive
    47 :  matrix B = b(Vh, Vh, solver=CG, eps=1e-20);
    48 :
    49 : // important remark:
@@ -56,30 +56,25 @@
    54 : // because we solve $ w=OP^-1*B*v $
    55 :
    56 : // Solve
-   57 : real[int] ev(nev); //to store the nev eigenvalue
-   58 : Vh[int] eV(nev); //to store the nev eigenvector
-   59 :
-   60 : int k = EigenValue(OP, B, sym=true, sigma=sigma, value=ev, vector=eV,
-   61 : tol=1e-14, maxit=0, ncv=0);
-   62 :
-   63 : // Display & Plot
-   64 : for (int i = 0; i < k; i++){
-   65 :     u1 = eV[i];
-   66 :     real gg = int2d(Th)(dx(u1)*dx(u1) + dy(u1)*dy(u1));
-   67 :     real mm = int2d(Th)(u1*u1) ;
-   68 :     cout << "lambda[" << i << "] = " << ev[i] << ", err= " << int2d(Th)(dx(u1)*dx(u1) + dy(u1)*dy(u1) - (ev[i])*u1*u1) << endl;
-   69 :  plot(eV[i], cmm="Eigen Vector "+i+" value ="+ev[i], wait=true, value=true);
-   70 :  } sizestack + 1024 =1960  ( 936 )
+   57 : complex[int] ev(nev); //to store the ral part nev eigenvalue
+   58 : real[int] iev(nev); //to store the imaginary part nev eigenvalue
+   59 : Vh[int] eV(nev); //to store the nev eigenvector
+   60 :
+   61 : int k = EigenValue(OP, B,  sigma=sigma, value=ev,vector=eV,
+   62 : tol=1e-10, maxit=90000, ncv=10) error operator (  <14Matrice_CreuseISt7complexIdEE>, <14Matrice_CreuseIdE>
+ List of choices
+         (        <l> :   <14Matrice_CreuseIdE>, <14Matrice_CreuseIdE> )
+         (        <l> :   <l> )
+         (        <l> :   <l>, <11Polymorphic>, <11Polymorphic> )
+         (        <l> :   <l>, <11Polymorphic> )
+         (        <l> :   <14Matrice_CreuseISt7complexIdEE>, <14Matrice_CreuseISt7complexIdEE> )
  
-lambda[0] = 2.02016e-12, err= -2.02016e-12
-lambda[1] = 8.98728, err= -3.70402e-12
-lambda[2] = 27.6093, err= -2.12456e-12
-lambda[3] = 37.9319, err= -1.79771e-12
-lambda[4] = 41.819, err= -4.29365e-12
-  current line = 65
-Exec error : Out of bound in FEbaseArray
-   -- number :1
-Exec error : Out of bound in FEbaseArray
-   -- number :1
- err code 8 ,  mpirank 0
- try getConsole C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\Channel.edp
+ Error line number 62, in file C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\ChannelComplex.edp, before  token )
+ 
+  current line = 62
+Compile error :
+        line number :62, )
+error Compile error :
+        line number :62, )
+ code = 1 mpirank: 0
+ try getConsole C:\Users\Bruney\Desktop\FreeFem\EigenvalueG\ChannelComplex.edp
